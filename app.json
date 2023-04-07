@@ -1,7 +1,6 @@
 {
   "expo": {
     "name": "expo-react-native-easy-crop",
-    "slug": "expo-react-native-easy-crop",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
