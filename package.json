@@ -1,7 +1,23 @@
 {
   "name": "expo-react-native-easy-crop",
-  "version": "1.0.1",
+  "version": "1.0.0",
+  "description": "Cropping made easy!",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emilje/expo-react-native-easy-crop"
+  },
+  "author": "Emil Jerkovic",
+  "keywords": [
+    "expo",
+    "react",
+    "native",
+    "react-native",
+    "image",
+    "crop",
+    "cropper",
+    "cropping"
+  ],
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -17,5 +33,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
-  }
+  },
+  "license": "MIT"
 }
