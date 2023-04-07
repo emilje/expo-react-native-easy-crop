@@ -26,6 +26,8 @@ You can then render the component:
 Clone the project, enter example directory **cd ./example** and then run **npm install** followed by **npm run install-package**. The second command will run a node script which will create a tarball and install it into the example directory. 
 <br/>
 If that script should fail you can try creating the tarball using **npm run create-tarball** followed by **npm i ../*name of tarball***. That should hopefully create the tarball in the root directory, and then install it inside the example directory. Alternatively, you could just run **npm install expo-react-native-easy-crop** in the example directory.
+<br/>
+Once the package is installed, you can start the project with **npm start**
 
 
 ## Props
