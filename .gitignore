@@ -10,6 +10,7 @@ npm-debug.*
 *.orig.*
 web-build/
 *.tgz
+package-lock.json
 
 # macOS
 .DS_Store
