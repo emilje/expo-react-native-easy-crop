@@ -1,4 +1,4 @@
-import { Button, Image, SafeAreaView, Text, View } from "react-native";
+import { Button, Image, Pressable, SafeAreaView, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {Cropper} from "expo-react-native-easy-crop";
@@ -42,24 +42,43 @@ export default function App() {
         handleCroppedImage={handleCroppedImage}
         // imageContainerStyle={{ padding: 8 }}
         // backdropColor={"black"}
-        // borderRadius={BORDER_RADIUS}
-        // header={(handleLayout) => (
-        //   <View
-        //     onLayout={handleLayout}
-        //     style={{
-        //       backgroundColor: "white",
-        //       alignItems: "center",
-        //       padding: 16,
-        //     }}
-        //   >
-        //     <Text>Header Hello!!</Text>
-        //   </View>
-        // )}
-        // footer={(cropImage) => (
-        //   <SafeAreaView style={{ backgroundColor: "green" }}>
-        //     <Button onPress={cropImage} title="Croppi" />
-        //   </SafeAreaView>
-        // )}
+        borderRadius={BORDER_RADIUS}
+        header={(handleLayout) => (
+          <View
+            onLayout={handleLayout}
+            style={{
+              backgroundColor: "#111111",
+              alignItems: "center",
+              padding: 16,
+            }}
+          >
+            <Text style={{ color: "#fafafa" }}>Custom header.</Text>
+            <Text style={{ color: "#fafafa", fontWeight: "100" }}>
+              Some more random text.
+            </Text>
+          </View>
+        )}
+        footer={(cropImage) => (
+          <SafeAreaView
+            style={{
+              padding: 24,
+              backgroundColor: "black",
+              alignItems: "center",
+            }}
+          >
+            <Pressable
+              onPress={cropImage}
+              style={{
+                backgroundColor: "#111111",
+                padding: 16,
+                borderRadius: 99,
+                overflow: "hidden",
+              }}
+            >
+              <Text style={{ color: "#fafafa" }}>CUSTOM CROP BUTTON</Text>
+            </Pressable>
+          </SafeAreaView>
+        )}
       />
     );
   }
