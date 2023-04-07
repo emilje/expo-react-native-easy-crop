@@ -4,7 +4,6 @@
     "main": "node_modules/expo/AppEntry.js",
     "scripts": {
         "create-tarball": "cd ../ && npm pack",
-        "install-tarball": "npm install ../expo-react-native-easy-crop-1.0.0.tgz",
         "install-package": "node ./run.js",
         "start": "expo start",
         "android": "expo start --android",
