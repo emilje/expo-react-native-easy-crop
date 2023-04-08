@@ -27,11 +27,10 @@ You can then render the component:
   Check below for required props and their explanation. Make sure to check the example project as well to get the right idea!
 
 ## Run example
-Clone the project, enter example directory **cd ./example** and then run **npm install** followed by **npm run install-package**. The second command will run a node script which will create a tarball and install it into the example directory. 
+Clone the project, enter example directory **cd example** and then run **npm install**. You can then run the example project with **npm start**.
+If for any reason the package fails to download or you want to quickly test changes you've done locally, you can create a tarball and install it yourself by running **npm run install-package**.
 <br/>
-If that script should fail you can try creating the tarball using **npm run create-tarball** followed by **npm i ../*name of tarball***. That should hopefully create the tarball in the root directory, and then install it inside the example directory. Alternatively, you could just run **npm install expo-react-native-easy-crop** in the example directory.
-<br/>
-Once the package is installed, you can start the project with **npm start**
+If that script should fail you can try creating the tarball using **npm run create-tarball** followed by **npm i ../*tarball name***. That should hopefully create the tarball in the root directory and install it inside the example directory.
 
 
 ## Props
