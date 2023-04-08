@@ -5,7 +5,10 @@
 https://user-images.githubusercontent.com/71398812/230671678-03cc836a-6460-4769-bfcc-2d66726105a3.mp4
 
 </br>
-You can  modify and adjust the styling to get the look you wish. For example:
+The Cropper comes with some basic ui, but can be modified and adjusted through props to get something closer to what you are looking for. For example inserting a header and a custom button:
+
+</br>
+</br>
 
 ![CustomStyling](https://user-images.githubusercontent.com/71398812/230675380-c060aa65-9f79-4ca0-ac51-01fb67527463.png)
 
