@@ -23,6 +23,9 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
   const onGrantValues = useRef({ x: 0, y: 0, scale: 1, isPinch: false });
   const pinchTranslateRef = useRef({x:0,y:0})
   const isAnimatingRef = useRef(false);
+  const isGrantedRef = useRef(false);
+  const isWaitingRef = useRef(false);
+  const activeTouchesRef = useRef([]);
 
   // This listener fixes updating animated value when using useNativeDriver in animations. This seems to be an issue with react native.
   useEffect(() => {
@@ -92,37 +95,46 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => (isAnimatingRef.current ? false : true),
-    onPanResponderGrant: (e, { numberActiveTouches }) => {
-      onGrantValues.current.x = positionRef.x._value;
-      onGrantValues.current.y = positionRef.y._value;
-      pinchTranslateRef.current = { x: 0, y: 0 };
-      if (numberActiveTouches === 2) {
-        isPinch.current = true;
-        onGrantValues.current.isPinch = true;
-
-        const [touch1, touch2] = e.nativeEvent.touches;
-        const distanceBetweenX = touch2.pageX - touch1.pageX;
-        const distanceBetweenY = touch2.pageY - touch1.pageY;
-        const distance = Math.sqrt(distanceBetweenX ** 2 + distanceBetweenY ** 2);
-
-        const newAnchor = {
-          x: (touch1.pageX + touch2.pageX) / 2 - cropperParent.x,
-          y: (touch1.pageY + touch2.pageY) / 2 - cropperParent.y - headerHeight,
-        };
-
-        const centerXInitial = positionRef.x._value + imageSize.width / 2;
-        const centerYInitial = positionRef.y._value + imageSize.height / 2;
-        const containerToAnchorOffset = {
-          x: newAnchor.x - centerXInitial,
-          y: newAnchor.y - centerYInitial,
-        };
-
-        referenceDistanceRef.current = distance;
-        scaleTranslateRef.setValue(containerToAnchorOffset);
-        anchorRef.setValue(newAnchor);
-      }
-    },
     onPanResponderMove: (e, { dx, dy, numberActiveTouches }) => {
+      activeTouchesRef.current = e.nativeEvent.touches;
+      if (!isGrantedRef.current && !isWaitingRef.current) {
+        isWaitingRef.current = true;
+        setTimeout(() => {
+          const numberActiveTouches = activeTouchesRef.current.length;
+          onGrantValues.current.x = positionRef.x._value;
+          onGrantValues.current.y = positionRef.y._value;
+          pinchTranslateRef.current = { x: 0, y: 0 };
+          if (numberActiveTouches === 2) {
+            isPinch.current = true;
+            onGrantValues.current.isPinch = true;
+
+            const [touch1, touch2] = activeTouchesRef.current;
+            const distanceBetweenX = touch2.pageX - touch1.pageX;
+            const distanceBetweenY = touch2.pageY - touch1.pageY;
+            const distance = Math.sqrt(distanceBetweenX ** 2 + distanceBetweenY ** 2);
+
+            const newAnchor = {
+              x: (touch1.pageX + touch2.pageX) / 2 - cropperParent.x,
+              y: (touch1.pageY + touch2.pageY) / 2 - cropperParent.y - headerHeight,
+            };
+
+            const centerXInitial = positionRef.x._value + imageSize.width / 2;
+            const centerYInitial = positionRef.y._value + imageSize.height / 2;
+            const containerToAnchorOffset = {x: newAnchor.x - centerXInitial, y: newAnchor.y - centerYInitial};
+
+            referenceDistanceRef.current = distance;
+            scaleTranslateRef.setValue(containerToAnchorOffset);
+            anchorRef.setValue(newAnchor);
+          }
+          isGrantedRef.current = true;
+          isWaitingRef.current = false;
+        }, 10);
+      }
+
+      if (!isGrantedRef.current) {
+        return;
+      }
+
       if (numberActiveTouches === 2 && isPinch.current) {
         const [touch1, touch2] = e.nativeEvent.touches;
         const distanceBetweenX = touch2.pageX - touch1.pageX;
@@ -152,6 +164,8 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
       });
     },
     onPanResponderRelease: async () => {
+      isGrantedRef.current = false;
+      isWaitingRef.current = false;
       if (onGrantValues.current.isPinch) {
         const { x, y, width, height, pageX, pageY } = await measureView(imageRef);
 
