@@ -44,19 +44,19 @@ export default function App() {
         // backdropColor={"black"}
         borderRadius={BORDER_RADIUS}
         header={(handleLayout) => (
-          <View
+          <SafeAreaView
             onLayout={handleLayout}
             style={{
               backgroundColor: "#111111",
-              alignItems: "center",
-              padding: 16,
             }}
           >
-            <Text style={{ color: "#fafafa" }}>Custom header.</Text>
-            <Text style={{ color: "#fafafa", fontWeight: "100" }}>
-              Some more random text.
-            </Text>
-          </View>
+            <View style={{ alignItems: "center", padding: 8 }}>
+              <Text style={{ color: "#fafafa" }}>Custom header.</Text>
+              <Text style={{ color: "#fafafa", fontWeight: "100" }}>
+                Some more random text.
+              </Text>
+            </View>
+          </SafeAreaView>
         )}
         footer={(cropImage) => (
           <SafeAreaView
