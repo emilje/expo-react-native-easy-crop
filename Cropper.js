@@ -25,17 +25,6 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
   const shouldApplyCorrections = useRef(true);
   const lastValid = useRef({ x:0, y:0, width:0, height:0, centerX:0, centerY:0 });
 
-  // This listener fixes updating animated value when using useNativeDriver in animations. This seems to be an issue with react native.
-  useEffect(() => {
-    positionRef.addListener((value) => null);
-    scaleRef.addListener((value) => null);
-
-    return () => {
-      positionRef.removeAllListeners();
-      scaleRef.removeAllListeners();
-    };
-  }, [positionRef, scaleRef]);
-
   useEffect(() => {
     if (!cropperParent.isReady) {
       return;
@@ -60,7 +49,7 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
       Animated.timing(opacityRef, {
         toValue: 1,
         duration: 1000,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     }, 100)
 
@@ -84,13 +73,13 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
           toValue: currentPositionRef.current,
           duration: 300,
           easing: Easing.elastic(0),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(scaleRef, {
           toValue: currentScaleRef.current,
           easing: Easing.elastic(0),
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(() => {
         shouldApplyCorrections.current = false;
@@ -138,7 +127,7 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
       Animated.spring(positionRef, {
         toValue: currentPositionRef.current,
         bounciness: 0,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
     }
   }, [imageSize]);
