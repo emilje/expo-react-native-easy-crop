@@ -22,8 +22,8 @@ export const getScale = (imageDimensions, cropperDimensions) => {
   }
 
   return {
-    width: imageWidth * scale,
-    height: imageHeight * scale,
+    width: Math.ceil(imageWidth * scale),
+    height: Math.ceil(imageHeight * scale),
   };
 };
 
