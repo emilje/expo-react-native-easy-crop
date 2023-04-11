@@ -20,12 +20,10 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
   const isPinch = useRef(false);
   const [cropperParent, setCropperParent] = useState({ x: 0, y: 0, width: 0, height: 0, isReady:false });
   const [headerHeight, setHeaderHeight] = useState(0);
-  const onGrantValues = useRef({ x: 0, y: 0, scale: 1, isPinch: false });
-  const pinchTranslateRef = useRef({x:0,y:0})
   const isAnimatingRef = useRef(false);
-  const isGrantedRef = useRef(false);
-  const isWaitingRef = useRef(false);
-  const activeTouchesRef = useRef([]);
+  const isGranted = useRef(false);
+  const shouldApplyCorrections = useRef(true);
+  const lastValid = useRef({ x:0, y:0, width:0, height:0, centerX:0, centerY:0 });
 
   // This listener fixes updating animated value when using useNativeDriver in animations. This seems to be an issue with react native.
   useEffect(() => {
@@ -36,7 +34,7 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
       positionRef.removeAllListeners();
       scaleRef.removeAllListeners();
     };
-  }, [positionRef]);
+  }, [positionRef, scaleRef]);
 
   useEffect(() => {
     if (!cropperParent.isReady) {
@@ -47,16 +45,79 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
       { width: imageData.width, height: imageData.height },
       { width: cropperParent.width, height: cropperParent.height }
     );
+    
+    lastValid.current = {
+      x:0,
+      y:0,
+      width: newWidth,
+      height: newHeight,
+      centerX: imageSize.width / 2,
+      centerY: imageSize.height / 2,
+    };
 
-    setImageSize({ width: newWidth, height: newHeight });
-    Animated.timing(opacityRef, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    const timer = setTimeout(() => {
+      setImageSize({ width: newWidth, height: newHeight });
+      Animated.timing(opacityRef, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
+    }
+   
   }, [cropperParent, imageData]);
 
   useEffect(() => {
+    if (shouldApplyCorrections.current && (imageSize.width < cropperParent.width || imageSize.height < cropperParent.height)) { 
+      const centerX = positionRef.x._value + imageSize.width/2
+      const centerY = positionRef.y._value + imageSize.height/2
+      const offsetX = lastValid.current.centerX - centerX;
+      const offsetY = lastValid.current.centerY - centerY;
+      currentPositionRef.current = {x: positionRef.x._value + offsetX, y: positionRef.y._value + offsetY}
+      currentScaleRef.current = lastValid.current.width/imageSize.width
+
+      Animated.parallel([
+        Animated.timing(positionRef, {
+          toValue: currentPositionRef.current,
+          duration: 300,
+          easing: Easing.elastic(0),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleRef, {
+          toValue: currentScaleRef.current,
+          easing: Easing.elastic(0),
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        shouldApplyCorrections.current = false;
+        currentScaleRef.current = 1;
+        currentPositionRef.current = {x:lastValid.current.x,y:lastValid.current.y};
+        positionRef.setValue(currentPositionRef.current);
+        scaleRef.setValue(currentScaleRef.current);
+        setImageSize({ width: lastValid.current.width, height: lastValid.current.height });
+        });
+      return;
+    }
+
+    isAnimatingRef.current = false;
+    if(!shouldApplyCorrections.current) {
+      shouldApplyCorrections.current =  true;
+      return;
+    }
+
+    lastValid.current = {
+      x:positionRef.x._value,
+      y:positionRef.y._value,
+      width: imageSize.width,
+      height: imageSize.height,
+      centerX: positionRef.x._value + imageSize.width / 2,
+      centerY: positionRef.y._value + imageSize.height / 2,
+    };
+    
     const { correctionX, correctionY } = getCorrections(
       { width: imageSize.width, height: imageSize.height },
       { x: positionRef.x._value, y: positionRef.y._value },
@@ -69,7 +130,12 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
         y: positionRef.y._value + correctionY,
       };
 
-      return Animated.spring(positionRef, {
+      lastValid.current.x = currentPositionRef.current.x;
+      lastValid.current.y = currentPositionRef.current.y;
+      lastValid.current.centerX = currentPositionRef.current.x + imageSize.width/2
+      lastValid.current.centerY = currentPositionRef.current.y + imageSize.height/2
+
+      Animated.spring(positionRef, {
         toValue: currentPositionRef.current,
         bounciness: 0,
         useNativeDriver: true,
@@ -95,137 +161,102 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => (isAnimatingRef.current ? false : true),
-    onPanResponderMove: (e, { dx, dy, numberActiveTouches }) => {
-      activeTouchesRef.current = e.nativeEvent.touches;
-      if (!isGrantedRef.current && !isWaitingRef.current) {
-        isWaitingRef.current = true;
-        setTimeout(() => {
-          const numberActiveTouches = activeTouchesRef.current.length;
-          onGrantValues.current.x = positionRef.x._value;
-          onGrantValues.current.y = positionRef.y._value;
-          pinchTranslateRef.current = { x: 0, y: 0 };
-          if (numberActiveTouches === 2) {
-            isPinch.current = true;
-            onGrantValues.current.isPinch = true;
-
-            const [touch1, touch2] = activeTouchesRef.current;
-            const distanceBetweenX = touch2.pageX - touch1.pageX;
-            const distanceBetweenY = touch2.pageY - touch1.pageY;
-            const distance = Math.sqrt(distanceBetweenX ** 2 + distanceBetweenY ** 2);
-
-            const newAnchor = {
-              x: (touch1.pageX + touch2.pageX) / 2 - cropperParent.x,
-              y: (touch1.pageY + touch2.pageY) / 2 - cropperParent.y - headerHeight,
-            };
-
-            const centerXInitial = positionRef.x._value + imageSize.width / 2;
-            const centerYInitial = positionRef.y._value + imageSize.height / 2;
-            const containerToAnchorOffset = {x: newAnchor.x - centerXInitial, y: newAnchor.y - centerYInitial};
-
-            referenceDistanceRef.current = distance;
-            scaleTranslateRef.setValue(containerToAnchorOffset);
-            anchorRef.setValue(newAnchor);
-          }
-          isGrantedRef.current = true;
-          isWaitingRef.current = false;
-        }, 10);
-      }
-
-      if (!isGrantedRef.current) {
+    onPanResponderMove: async (e, { dx, dy, numberActiveTouches }) => {
+      if(isAnimatingRef.current) {
         return;
       }
+      
+      if(!isGranted.current) {
+        currentPositionRef.current= {x:positionRef.x._value, y:positionRef.y._value}
+        isPinch.current = false;
+        if (numberActiveTouches === 2) {
+          isPinch.current = true;
+  
+          const [touch1, touch2] = e.nativeEvent.touches;
+          const distanceBetweenX = touch2.pageX - touch1.pageX;
+          const distanceBetweenY = touch2.pageY - touch1.pageY;
+          const distance = Math.sqrt(distanceBetweenX ** 2 + distanceBetweenY ** 2);
+  
+          const newAnchor = {
+            x: (touch1.pageX + touch2.pageX) / 2 - cropperParent.x,
+            y: (touch1.pageY + touch2.pageY) / 2 - cropperParent.y - headerHeight,
+          };
+  
+          const centerXInitial = positionRef.x._value + imageSize.width / 2;
+          const centerYInitial = positionRef.y._value + imageSize.height / 2;
+          const containerToAnchorOffset = {
+            x: newAnchor.x - centerXInitial,
+            y: newAnchor.y - centerYInitial,
+          };
+  
+          referenceDistanceRef.current = distance;
+          scaleTranslateRef.setValue(containerToAnchorOffset);
+          anchorRef.setValue(newAnchor);
+        }
+        isGranted.current = true;
+      }
 
-      if (numberActiveTouches === 2 && isPinch.current) {
+      if (numberActiveTouches === 2) {
+        if (!isPinch.current) {
+          isGranted.current = false;
+          return;
+        }
+
         const [touch1, touch2] = e.nativeEvent.touches;
         const distanceBetweenX = touch2.pageX - touch1.pageX;
         const distanceBetweenY = touch2.pageY - touch1.pageY;
-        const distance = Math.sqrt(distanceBetweenX ** 2 + distanceBetweenY ** 2);
-        const newScale = currentScaleRef.current * (distance / referenceDistanceRef.current);
+        const distance = Math.sqrt(
+          distanceBetweenX ** 2 + distanceBetweenY ** 2
+        );
+        let newScale = currentScaleRef.current * (distance / referenceDistanceRef.current);
+        const newWidth = imageSize.width*newScale;
+
+        if (newWidth < cropperParent.width * 0.8) {
+          newScale = (0.8 * cropperParent.width) / imageSize.width;
+        }
+
         const anchorOffsetX = (touch1.pageX + touch2.pageX) / 2 - anchorRef.x._value;
         const anchorOffsetY = (touch1.pageY + touch2.pageY) / 2 - anchorRef.y._value;
-
         positionRef.setValue({
           x: currentPositionRef.current.x + anchorOffsetX - cropperParent.x,
-          y: currentPositionRef.current.y + anchorOffsetY - cropperParent.y - headerHeight,
-        });
+          y: currentPositionRef.current.y +anchorOffsetY - cropperParent.y - headerHeight });
         scaleRef.setValue(newScale);
         return;
       }
 
       if (isPinch.current) {
-        isPinch.current = false;
-        pinchTranslateRef.current = { x: dx, y: dy };
-        currentPositionRef.current = {x: positionRef.x._value, y: positionRef.y._value};
-      }
-
-      positionRef.setValue({
-        x: currentPositionRef.current.x + dx - pinchTranslateRef.current.x,
-        y: currentPositionRef.current.y + dy - pinchTranslateRef.current.y,
-      });
-    },
-    onPanResponderRelease: async () => {
-      isGrantedRef.current = false;
-      isWaitingRef.current = false;
-      if (onGrantValues.current.isPinch) {
+        isAnimatingRef.current = true;
+        isGranted.current = false;
+        shouldApplyCorrections.current = false;
         const { x, y, width, height, pageX, pageY } = await measureView(imageRef);
-
-        if (width < cropperParent.width || height < cropperParent.height) {
-          currentPositionRef.current = {x: onGrantValues.current.x, y: onGrantValues.current.y};
-          isAnimatingRef.current = true;
-
-          Animated.parallel([
-            Animated.timing(positionRef, {
-              toValue: currentPositionRef.current,
-              duration: 300,
-              easing: Easing.elastic(0),
-              useNativeDriver: true,
-            }),
-            Animated.timing(scaleRef, {
-              toValue: currentScaleRef.current,
-              easing: Easing.elastic(0),
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ]).start(() => (isAnimatingRef.current = false));
-          return;
-        }
-
         const newPos = {x: pageX - cropperParent.x, y: pageY - cropperParent.y - headerHeight}
         positionRef.setValue(newPos);
-        scaleRef.setValue(1);
         currentPositionRef.current = newPos;
+        scaleRef.setValue(1);
         currentScaleRef.current = 1;
-        isPinch.current = false;
-        onGrantValues.current.isPinch = false;
         setImageSize({ width, height });
         return;
       }
 
-      // Gap corrections
-      const { correctionX, correctionY } = getCorrections(
-        { width: imageSize.width, height: imageSize.height },
-        { x: positionRef.x._value, y: positionRef.y._value },
-        { width: cropperParent.width, height: cropperParent.height }
-      );
-
-      if (correctionX || correctionY) {
-        currentPositionRef.current = {
-          x: positionRef.x._value + correctionX,
-          y: positionRef.y._value + correctionY,
-        };
-
-        return Animated.spring(positionRef, {
-          toValue: currentPositionRef.current,
-          bounciness: 0,
-          useNativeDriver: true,
-        }).start();
-      }
-
-      currentPositionRef.current = {
-        x: positionRef.x._value,
-        y: positionRef.y._value,
-      };
-      currentScaleRef.current = scaleRef._value;
+      positionRef.setValue({
+        x: currentPositionRef.current.x + dx,
+        y: currentPositionRef.current.y + dy
+      });
+    
+    },
+    onPanResponderRelease: async () => {
+      isAnimatingRef.current = true;
+      isGranted.current = false;
+      const newWidth = imageSize.width*scaleRef._value;
+      const newHeight = imageSize.height*scaleRef._value;
+      const { x, y, width, height, pageX, pageY } = await measureView(imageRef);
+      const newPos = {x: pageX - cropperParent.x, y: pageY - cropperParent.y - headerHeight};
+      positionRef.setValue(newPos);
+      scaleRef.setValue(1);
+      scaleTranslateRef.setValue({x:0,y:0})
+      currentPositionRef.current = newPos;
+      currentScaleRef.current = 1;
+      setImageSize({ width: newWidth, height: newHeight });
     },
   });
 
