@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Animated, PanResponder, Button, Easing, SafeAreaView } from "react-native";
 import * as ImageManipulator from 'expo-image-manipulator';
-import PropTypes from 'prop-types';
 import { getCorrections, getScale, measureView } from "./functions";
 
 const PADDING = 8;
@@ -331,21 +330,6 @@ const Cropper = ({ imageData, aspectRatio, handleCroppedImage, imageContainerSty
       {renderFooter()}
     </View>
   );
-};
-
-Cropper.propTypes = {
-  imageData: PropTypes.shape({
-    uri: PropTypes.string.isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
-  }),
-  aspectRatio: PropTypes.number.isRequired,
-  handleCroppedImage: PropTypes.func.isRequired,
-  imageContainerStyle: PropTypes.object,
-  backdropColor: PropTypes.string,
-  borderRadius: PropTypes.number,
-  footer: PropTypes.func,
-  header: PropTypes.func,
 };
 
 export default Cropper;
