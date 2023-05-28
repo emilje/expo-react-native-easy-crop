@@ -9,16 +9,16 @@ declare module "expo-react-native-easy-crop" {
   };
 
   type ImageContainerStyleType = {
-    justifyContent: FlexStyle["justifyContent"];
-    alignItems: FlexStyle["alignItems"];
-    backgroundColor: string;
-    padding: number;
+    justifyContent?: FlexStyle["justifyContent"];
+    alignItems?: FlexStyle["alignItems"];
+    backgroundColor?: string;
+    padding?: number;
   };
 
   type CropperProps = {
     imageData: ImageDataType;
     aspectRatio: number;
-    handleCroppedImage: () => void;
+    handleCroppedImage: (croppedUri: string) => void;
     imageContainerStyle?: ImageContainerStyleType;
     backdropColor?: string;
     borderRadius?: number;

@@ -8,7 +8,7 @@ const BORDER_RADIUS = 8;
 
 export default function App() {
   const [isCropping, setIsCropping] = useState(false);
-  const [imageData, setImageData] = useState("");
+  const [imageData, setImageData] = useState(null);
   const [croppedImage, setCroppedImage] = useState("");
 
   const pickImage = async () => {
@@ -29,7 +29,7 @@ export default function App() {
     }
   };
 
-  if (isCropping) {
+  if (isCropping && imageData) {
     const handleCroppedImage = (croppedUri) => {
       setCroppedImage(croppedUri);
       setIsCropping(false);
@@ -100,7 +100,7 @@ export default function App() {
         >
           <Image
             style={{ flex: 1 }}
-            source={{ uri: croppedImage ? croppedImage : null }}
+            source={{ uri: croppedImage ? croppedImage : undefined }}
           />
         </View>
       </View>
