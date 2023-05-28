@@ -1,14 +1,14 @@
 import { Button, Image, Pressable, SafeAreaView, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import {Cropper, ImageDataType} from "expo-react-native-easy-crop";
+import {Cropper} from "expo-react-native-easy-crop";
 
 const ASPECT_RATIO = 10/16;
 const BORDER_RADIUS = 8;
 
 export default function App() {
   const [isCropping, setIsCropping] = useState(false);
-  const [imageData, setImageData] = useState<ImageDataType | null>(null);
+  const [imageData, setImageData] = useState(null);
   const [croppedImage, setCroppedImage] = useState("");
 
   const pickImage = async () => {
